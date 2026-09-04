@@ -17,8 +17,12 @@
                 <div class="input-group">
                     <label>Password</label>
                     <div class="password-wrapper">
-                        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="••••••••"
-                            required />
+                        <input
+                            :type="showPassword ? 'text' : 'password'"
+                            v-model="password"
+                            placeholder="••••••••"
+                            required
+                        />
                         <button type="button" class="toggle-password" @click="showPassword = !showPassword">
                             {{ showPassword ? 'Hide' : 'Show' }}
                         </button>
@@ -29,7 +33,14 @@
                     <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="submit-btn">Sign in</button>
+                <!-- Error message -->
+                <p v-if="authStore.errorMessage" class="error-message">
+                    {{ authStore.errorMessage }}
+                </p>
+
+                <button type="submit" class="submit-btn" :disabled="authStore.isLoading">
+                    {{ authStore.isLoading ? 'Signing in...' : 'Sign in' }}
+                </button>
             </form>
 
             <p class="register-link">
@@ -43,16 +54,20 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthLayout from '../../layouts/AuthLayout.vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 
-const handleLogin = () => {
-    // Simulasi login sukses, arahkan ke dashboard
-    console.log('Login attempt:', email.value)
-    router.push('/')
+const handleLogin = async () => {
+    const success = await authStore.login(email.value, password.value)
+    if (success) {
+        router.push('/dashboard')
+    }
 }
 </script>
 
@@ -137,6 +152,16 @@ input:focus {
     font-size: 0.9rem;
 }
 
+.error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+}
+
 .submit-btn {
     width: 100%;
     padding: 1rem;
@@ -152,8 +177,13 @@ input:focus {
     margin-top: 0.5rem;
 }
 
-.submit-btn:hover {
+.submit-btn:hover:not(:disabled) {
     background-color: #3b6346;
+}
+
+.submit-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
 }
 
 .register-link {
