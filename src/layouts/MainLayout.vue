@@ -19,11 +19,11 @@
                 <!-- Profil Kanan -->
                 <div class="user-menu">
                     <div class="user-info">
-                        <span class="user-name">Daniel</span>
-                        <span class="user-email">daniel@email.com</span>
+                        <span class="user-name">{{ displayName }}</span>
+                        <span class="user-email">{{ userEmail }}</span>
                     </div>
-                    <div class="avatar">D</div>
-                    <button @click="handleLogout" class="logout-btn">Sign out</button>
+                    <div class="avatar">{{ userInitial }}</div>
+                    <button @click="handleLogout" class="logout-btn" title="Sign out from application">Sign out</button>
                 </div>
             </div>
         </nav>
@@ -36,12 +36,42 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
+// Parse user email from JWT token jika ada di localStorage
+const userEmail = computed(() => {
+    const token = localStorage.getItem('token')
+    if (!token) return 'user@email.com'
+    try {
+        const payloadBase64 = token.split('.')[1]
+        if (!payloadBase64) return 'user@email.com'
+        const decoded = JSON.parse(atob(payloadBase64))
+        return decoded.email || decoded.Email || 'user@email.com'
+    } catch {
+        return 'user@email.com'
+    }
+})
+
+const displayName = computed(() => {
+    if (userEmail.value.includes('@')) {
+        const namePart = userEmail.value.split('@')[0]
+        return namePart.charAt(0).toUpperCase() + namePart.slice(1)
+    }
+    return 'User'
+})
+
+const userInitial = computed(() => {
+    return displayName.value.charAt(0).toUpperCase() || 'U'
+})
 
 const handleLogout = () => {
     // Kembali ke halaman login
+    authStore.logout()
     router.push('/login')
 }
 </script>
@@ -157,6 +187,8 @@ const handleLogout = () => {
     font-size: 0.9rem;
     cursor: pointer;
     margin-left: 0.5rem;
+    font-weight: 500;
+    transition: color 0.2s;
 }
 
 .logout-btn:hover {
